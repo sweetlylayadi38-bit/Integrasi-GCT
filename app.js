@@ -80,21 +80,25 @@
   // One question. s: {q, img?, opsi+jawab | terima, alasan, mk?, hal?, status?, kunci?, catatan?}
   function soalItem(s, id, nilai) {
     var li = el('li'), kunci = s.opsi ? 'ABCDEFGH'[s.jawab] + '. ' + s.opsi[s.jawab] : s.terima[0];
+    li.ulang = function () { var baru = soalItem(s, id, nilai); li.replaceWith(baru); return baru; };   // back to unanswered
     function selesai(ok) {                      // ok: true/false = scored, null = revealed without scoring
-      if (ok !== null) nilai(ok);
-      if (ok === false && !s.opsi) {            // exact matching misses valid wording: let the student overrule it
-        var ralat = el('button.sek', 'Jawabanku benar', { type: 'button' });
-        ralat.addEventListener('click', function () {
-          nilai(true, true); li.classList.replace('no', 'ok'); li.querySelector('.hasil b').textContent = 'Benar. '; ralat.remove();
-        });
-        setTimeout(function () { li.append(ralat); });
-      }
       li.classList.add(ok === null ? 'lihat' : ok ? 'ok' : 'no');
+      nilai();
       var p = el('p.hasil', [el('b', ok === null ? 'Jawaban: ' : ok ? 'Benar. ' : 'Salah. '), (ok === null ? '' : 'Jawaban: ') + kunci + '. ' + s.alasan + ' ']);
       if (s.mk) p.append(el('a', 'hal. ' + s.hal, { href: '#' + s.mk + '-' + s.hal }));
       li.append(p);
       if (s.status === 'beda') li.append(el('p.cat', [el('b', 'Beda dengan kunci berkas. '), (s.kunci ? 'Kunci berkas: ' + s.kunci + '. ' : '') + (s.catatan || '')]));
       else if (s.status === 'tidak_ada_di_ppt') li.append(el('p.cat', [el('b', 'Tidak ada di PPT. '), s.catatan || 'Jawaban ikut kunci berkas.']));
+      if (ok === false && !s.opsi) {            // exact matching misses valid wording: let the student overrule it
+        var ralat = el('button.sek', 'Jawabanku benar', { type: 'button' });
+        ralat.addEventListener('click', function () {
+          li.classList.replace('no', 'ok'); nilai(); li.querySelector('.hasil b').textContent = 'Benar. '; ralat.nextSibling.focus(); ralat.remove();
+        });
+        li.append(ralat);
+      }
+      var reset = el('button.sek', 'Reset soal', { type: 'button' });
+      reset.addEventListener('click', function () { var baru = li.ulang(); nilai(); baru.querySelector('input, button').focus(); });
+      li.append(reset);
     }
     function gambar() {
       return el('div.gbr', s.img.map(function (g, i) {
@@ -137,14 +141,25 @@
 
   // groups: [{judul, items}] -> <details> with running score
   function kuis(id, judul, groups) {
-    var benar = 0, dijawab = 0, total = groups.reduce(function (n, g) { return n + g.items.length; }, 0);
+    var total = groups.reduce(function (n, g) { return n + g.items.length; }, 0);
     var skor = el('p.skor', '', { 'aria-live': 'polite' });
-    function nilai(ok, ralat) {
-      if (!ralat) dijawab++;
-      if (ok) benar++;
-      skor.textContent = 'Skor ' + benar + ' dari ' + dijawab + ' terjawab (' + total + ' soal)';
+    var reset = el('button.sek', 'Reset semua jawaban', { type: 'button', hidden: '' });
+    function hitung(sel) { return d.querySelectorAll(sel).length; }
+    function nilai() {                          // recount from the DOM, so no reset path can leave the score out of sync
+      var benar = hitung('.soal > .ok'), dijawab = benar + hitung('.soal > .no');
+      skor.textContent = dijawab ? 'Skor ' + benar + ' dari ' + dijawab + ' terjawab (' + total + ' soal)' : '';
+      reset.hidden = !dijawab && !hitung('.soal > .lihat');
     }
-    var d = el('details.latihan', [el('summary', judul + ' (' + total + ')'), skor], { id: id });
+    var d = el('details.latihan', [el('summary', judul + ' (' + total + ')'), skor, reset], { id: id });
+    d.ulang = function () {
+      [].forEach.call(d.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat'), function (li) { li.ulang(); });
+      nilai();
+    };
+    reset.addEventListener('click', function () {
+      var n = hitung('.soal > .ok, .soal > .no, .soal > .lihat');
+      if (n > 1 && !confirm('Reset ' + n + ' jawaban di ' + judul + '?')) return;
+      d.ulang(); d.firstChild.focus();
+    });
     groups.forEach(function (g, gi) {
       d.append(el('h4', g.judul), el('ol.soal', g.items.map(function (s, n) { return soalItem(s, 'isi-' + id + '-' + gi + '-' + n, nilai); })));
     });
@@ -198,6 +213,13 @@
   if (window.INTEG) nav.append(el('a', ['Ujian integrasi', el('small', window.INTEG.reduce(function (n, t) { return n + t.soal.length; }, 0) + ' soal · ' + window.INTEG.length + ' tahun')], { href: '#integrasi' }));
   nav.append(el('a', ['Semua kesalahan isi', el('small', all.length + ' temuan')], { href: '#salah' }));
   app.append(nav);
+  var semua = el('button.sek.semua', 'Reset semua jawaban di halaman ini', { type: 'button' });
+  semua.addEventListener('click', function () {
+    var n = app.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat').length;
+    if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di semua latihan dan ujian integrasi?')) return;
+    [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.ulang(); });
+  });
+  app.append(semua);
   D.forEach(function (m) { app.append(section(m)); });
   if (window.INTEG) app.append(integrasi(window.INTEG));
   app.append(el('section', [
