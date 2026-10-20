@@ -1,4 +1,5 @@
 body{margin:0}img{max-width:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* layout: fixed monochrome artwork behind one reading column; each practical is a charcoal panel */
 :root{color-scheme:dark;--bg:#0b0b0b;--card:#1a1a1a;--panel:rgba(16,16,16,.9);--fg:#ededed;--mute:#a8a8a8;--line:#3a3a3a;--acc:#fff;--hi:#ff8a80;--mid:#f0b95a;--lo:#a8a8a8;--mark:#2b1716;--ok:#7fd6a0;--okbg:#14261b;
 --disp:"Bricolage Grotesque",system-ui,sans-serif;--body:"Atkinson Hyperlegible",system-ui,sans-serif}
@@ -16,7 +17,7 @@ nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8
 nav a{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px;text-decoration:none;font-weight:700;display:flex;flex-direction:column}
 nav small{color:var(--mute);font-weight:400;font-variant-numeric:tabular-nums}
 header,section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px clamp(14px,3vw,28px)}
-section{scroll-margin-top:12px}
+section{scroll-margin-top:12px;content-visibility:auto;contain-intrinsic-size:auto 2500px}
 ul{margin:0;padding-left:1.15em}li{margin-block:3px}
 .inti{max-width:75ch}
 .topik{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px 28px}
