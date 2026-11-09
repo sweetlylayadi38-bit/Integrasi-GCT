@@ -4,10 +4,7 @@
   var app = document.getElementById('app'), D = window.REKAP;
   if (!D) { document.getElementById('lede').textContent = 'Data rekap (data.js) gagal dimuat. Muat ulang halaman.'; return; }
 
-  var RANK = { tinggi: 0, sedang: 1, rendah: 2 };
-  function serius(b) { return b.jenis !== 'typo' && b.yakin !== 'rendah'; }
-
-  // el('li.bug', 'text' | [children], {attr: value}) -- text always goes through textContent, never innerHTML
+  // el('figure', 'text' | [children], {attr: value}) -- text always goes through textContent, never innerHTML
   function el(sel, kids, attrs) {
     var p = sel.split('.'), n = document.createElement(p[0]);
     if (p.length > 1) n.className = p.slice(1).join(' ');
@@ -15,51 +12,14 @@
     [].concat(kids == null ? [] : kids).forEach(function (k) { n.append(k); });
     return n;
   }
-  function list(cls, items) { return el('ul' + cls, items.map(function (t) { return el('li', t); })); }
   function pad(i) { return (i < 10 ? '0' : '') + i; }
 
-  function bugItem(m, b, withSrc) {
-    var y = RANK.hasOwnProperty(b.yakin) ? b.yakin : 'rendah';
-    var meta = el('div.meta', [
-      el('a', 'hal. ' + b.hal, { href: '#' + m.key + '-' + b.hal }),
-      el('span.tag', b.jenis), el('span.tag.yk', 'yakin ' + b.yakin)
-    ]);
-    if (withSrc) meta.prepend(el('span.tag.src', m.nama));
-    return el('li.bug.y-' + y, [
-      meta,
-      el('p', [el('b', 'Tertulis: '), el('q', b.tertulis)]),
-      el('p', [el('b', 'Seharusnya: '), b.seharusnya]),
-      el('p.why', b.alasan)
-    ]);
-  }
-  function sortBugs(a, b) { return serius(b.b) - serius(a.b) || RANK[a.b.yakin] - RANK[b.b.yakin] || a.b.hal - b.b.hal; }
-
   function section(m) {
-    var bugs = m.bug.map(function (b) { return { b: b }; }).sort(sortBugs).map(function (x) { return x.b; });
-    var s = bugs.filter(serius), r = bugs.filter(function (b) { return !serius(b); });
     var sec = el('section', [el('p.eyebrow', m.nama), el('h2', m.judul)], { id: m.key });
-    if (m.inti.length) sec.append(el('h3', 'Inti ujian'), list('.inti', m.inti));
-    sec.append(el('h3', 'Rekap per topik'));
-
-    sec.append(el('div.topik', m.bagian.map(function (t) {
-      var hl = el('p.hl', 'hal. ');
-      (t.halaman || []).forEach(function (h) { hl.append(el('a', String(h), { href: '#' + m.key + '-' + h }), ' '); });
-      return el('article', [el('h4', t.judul), list('', t.poin), hl]);
-    })));
-
-    if (m.soal) sec.append(latihan(m));
-
-    sec.append(el('h3', 'Kesalahan di berkas (' + bugs.length + ')'));
-    if (!bugs.length) sec.append(el('p', 'Tidak ada.'));
-    if (s.length) sec.append(el('ul.bugs', s.map(function (b) { return bugItem(m, b); })));
-    if (r.length) sec.append(el('details', [
-      el('summary', r.length + ' temuan kecil: salah ketik dan dugaan lemah'),
-      el('ul.bugs', r.map(function (b) { return bugItem(m, b); }))
-    ]));
 
     // Gallery stays closed: lazy images inside a closed <details> are not fetched until opened.
     sec.append(el('details.galeri', [
-      el('summary', 'Semua gambar (' + m.halaman.length + ' halaman)'),
+      el('summary', 'Slide (' + m.halaman.length + ' halaman)'),
       el('div.gal', m.halaman.map(function (h) {
         return el('figure', [
           el('img', null, { loading: 'lazy', decoding: 'async', src: 'img/' + m.key + '-' + pad(h.n) + '.webp', alt: m.nama + ' halaman ' + h.n, width: m.w, height: m.h, tabindex: '0', role: 'button', 'aria-expanded': 'false' }),
@@ -168,14 +128,6 @@
     return d;
   }
 
-  function latihan(m) {
-    function ref(s) { s.mk = m.key; return s; }
-    return kuis('latihan-' + m.key, 'Latihan soal', [
-      { judul: 'Pilihan ganda', items: m.soal.pg.map(ref) },
-      { judul: 'Isian', items: m.soal.isian.map(function (s) { s.terima = s.jawab; return ref(s); }) }
-    ]);
-  }
-
   // Past integrated exams: one quiz per year, grouped by subject in original order.
   function integrasi(T) {
     var sec = el('section', [
@@ -199,37 +151,24 @@
       cocok('1,5 mL', ['1.5 ml']) && !cocok('15 ml', ['1,5 ml']) && cocok('E. coli', ['e. coli']) && cocok('h&e', ['H&E']), 'cocok() rusak');
   }
 
-  var nPage = 0, nBug = 0, all = [];
-  D.forEach(function (m) {
-    nPage += m.halaman.length; nBug += m.bug.length;
-    m.bug.filter(serius).forEach(function (b) { all.push({ m: m, b: b }); });
-  });
-  all.sort(function (a, b) { return RANK[a.b.yakin] - RANK[b.b.yakin]; });
-
-  document.getElementById('lede').textContent = D.length + ' berkas, ' + nPage + ' halaman, semua gambar slide ikut. ' +
-    nBug + ' kesalahan materi ditemukan, ' + all.length + ' di antaranya kesalahan isi dengan keyakinan sedang atau tinggi.';
+  var nPage = D.reduce(function (n, m) { return n + m.halaman.length; }, 0);
+  var nSoal = window.INTEG ? window.INTEG.reduce(function (n, t) { return n + t.soal.length; }, 0) : 0;
+  document.getElementById('lede').textContent = D.length + ' berkas praktikum, ' + nPage + ' halaman slide, dan ' + nSoal + ' soal Ujian Praktikum Integrasi 2017-2023.';
 
   var nav = el('nav', D.map(function (m) {
-    return el('a', [m.nama, el('small', m.halaman.length + ' hal · ' + (m.soal ? m.soal.pg.length + m.soal.isian.length : 0) + ' soal')], { href: '#' + m.key });
+    return el('a', [m.nama, el('small', m.halaman.length + ' hal')], { href: '#' + m.key });
   }), { 'aria-label': 'Materi' });
-  if (window.INTEG) nav.append(el('a', ['Ujian integrasi', el('small', window.INTEG.reduce(function (n, t) { return n + t.soal.length; }, 0) + ' soal · ' + window.INTEG.length + ' tahun')], { href: '#integrasi' }));
-  nav.append(el('a', ['Semua kesalahan isi', el('small', all.length + ' temuan')], { href: '#salah' }));
+  if (window.INTEG) nav.append(el('a', ['Ujian integrasi', el('small', nSoal + ' soal · ' + window.INTEG.length + ' tahun')], { href: '#integrasi' }));
   app.append(nav);
   var semua = el('button.sek.semua', 'Reset semua jawaban di halaman ini', { type: 'button' });
   semua.addEventListener('click', function () {
     var n = app.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat').length;
-    if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di semua latihan dan ujian integrasi?')) return;
+    if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di ujian integrasi?')) return;
     [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.ulang(); });
   });
   app.append(semua);
   D.forEach(function (m) { app.append(section(m)); });
   if (window.INTEG) app.append(integrasi(window.INTEG));
-  app.append(el('section', [
-    el('p.eyebrow', 'Gabungan'), el('h2', 'Semua kesalahan isi'),
-    el('p.lede', 'Diurut dari yang paling yakin. Cocokkan dulu dengan dosen atau buku acuan sebelum dipakai membantah slide.'),
-    el('ul.bugs', all.map(function (x) { return bugItem(x.m, x.b, true); }))
-  ], { id: 'salah' }));
-
   // Content is rendered after load, so the browser's own jump to #hash has nothing to land on: do it once here.
   // In-page links only need their <details> opened; the browser then scrolls and restores position on Back.
   function reveal(id) {
