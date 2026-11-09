@@ -6,7 +6,7 @@ Situs statis tanpa build. Buka `index.html` langsung, atau aktifkan GitHub Pages
 
 - `index.html` halaman slide
 - `integrasi.html` halaman ujian integrasi
-- `style.css`, `polish.css` tampilan
+- `style.css` tampilan
 - `app.js` penyusun kedua halaman dan kuis
 - `enhance.js` kotak pencarian
 - `data.js` daftar slide dan keterangannya
