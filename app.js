@@ -1,8 +1,8 @@
-// Renders window.REKAP (data.js) into #app. No dependencies.
+// Renders window.REKAP (data.js, slide page) or window.INTEG (integ.js, exam page) into #app. No dependencies.
 (function () {
   'use strict';
-  var app = document.getElementById('app'), D = window.REKAP;
-  if (!D) { document.getElementById('lede').textContent = 'Data rekap (data.js) gagal dimuat. Muat ulang halaman.'; return; }
+  var app = document.getElementById('app'), D = window.REKAP, T = window.INTEG;
+  if (!D && !T) { document.getElementById('lede').textContent = 'Data gagal dimuat. Muat ulang halaman.'; return; }
 
   // el('figure', 'text' | [children], {attr: value}) -- text always goes through textContent, never innerHTML
   function el(sel, kids, attrs) {
@@ -47,7 +47,7 @@
       li.classList.add(ok === null ? 'lihat' : ok ? 'ok' : 'no');
       nilai();
       var p = el('p.hasil', [el('b', ok === null ? 'Jawaban: ' : ok ? 'Benar. ' : 'Salah. '), (ok === null ? '' : 'Jawaban: ') + kunci + '. ' + s.alasan + ' ']);
-      if (s.mk) p.append(el('a', 'hal. ' + s.hal, { href: '#' + s.mk + '-' + s.hal }));
+      if (s.mk) p.append(el('a', 'hal. ' + s.hal, { href: 'index.html#' + s.mk + '-' + s.hal, target: '_blank', rel: 'noopener' }));
       li.append(p);
       if (s.status === 'beda') li.append(el('p.cat', [el('b', 'Beda dengan kunci berkas. '), (s.kunci ? 'Kunci berkas: ' + s.kunci + '. ' : '') + (s.catatan || '')]));
       else if (s.status === 'tidak_ada_di_ppt') li.append(el('p.cat', [el('b', 'Tidak ada di PPT. '), s.catatan || 'Jawaban ikut kunci berkas.']));
@@ -129,21 +129,14 @@
   }
 
   // Past integrated exams: one quiz per year, grouped by subject in original order.
-  function integrasi(T) {
-    var sec = el('section', [
-      el('p.eyebrow', 'Soal tahun lalu'), el('h2', 'Ujian Praktikum Integrasi'),
-      el('p.lede', 'Jawaban mengikuti slide praktikum. Bila kunci di berkas berbeda atau topiknya tidak ada di slide, ada catatan setelah soal dijawab.')
-    ], { id: 'integrasi' });
-    T.forEach(function (t) {
-      var groups = [];
-      t.soal.forEach(function (s) {
-        var g = groups[groups.length - 1];
-        if (!g || g.judul !== s.bidang) groups.push(g = { judul: s.bidang, items: [] });
-        g.items.push(s);
-      });
-      sec.append(kuis(t.key, t.nama, groups));
+  function tahun(t) {
+    var groups = [];
+    t.soal.forEach(function (s) {
+      var g = groups[groups.length - 1];
+      if (!g || g.judul !== s.bidang) groups.push(g = { judul: s.bidang, items: [] });
+      g.items.push(s);
     });
-    return sec;
+    return kuis(t.key, t.nama, groups);
   }
 
   if (new URLSearchParams(location.search).has('selftest')) {
@@ -151,24 +144,33 @@
       cocok('1,5 mL', ['1.5 ml']) && !cocok('15 ml', ['1,5 ml']) && cocok('E. coli', ['e. coli']) && cocok('h&e', ['H&E']), 'cocok() rusak');
   }
 
-  var nPage = D.reduce(function (n, m) { return n + m.halaman.length; }, 0);
-  var nSoal = window.INTEG ? window.INTEG.reduce(function (n, t) { return n + t.soal.length; }, 0) : 0;
-  document.getElementById('lede').textContent = D.length + ' berkas praktikum, ' + nPage + ' halaman slide, dan ' + nSoal + ' soal Ujian Praktikum Integrasi 2017-2023.';
+  var nav;
+  if (D && /^#integ/.test(location.hash)) { location.replace('integrasi.html' + location.hash); return; }   // old links to exams on the slide page
+  if (D) {
+    var nPage = D.reduce(function (n, m) { return n + m.halaman.length; }, 0);
+    document.getElementById('lede').textContent = D.length + ' berkas praktikum, ' + nPage + ' halaman slide.';
+    nav = el('nav', D.map(function (m) {
+      return el('a', [m.nama, el('small', m.halaman.length + ' hal')], { href: '#' + m.key });
+    }), { 'aria-label': 'Materi' });
+    app.append(nav);
+    D.forEach(function (m) { app.append(section(m)); });
+  } else {
+    var nSoal = T.reduce(function (n, t) { return n + t.soal.length; }, 0);
+    document.getElementById('lede').textContent = nSoal + ' soal dari ' + T.length + ' tahun ujian. Jawaban mengikuti slide praktikum; bila kunci di berkas berbeda atau topiknya tidak ada di slide, ada catatan setelah soal dijawab.';
+    nav = el('nav', T.map(function (t) {
+      return el('a', [t.nama, el('small', t.soal.length + ' soal')], { href: '#' + t.key });
+    }), { 'aria-label': 'Tahun ujian' });
+    app.append(nav);
+    var semua = el('button.sek.semua', 'Reset semua jawaban di halaman ini', { type: 'button' });
+    semua.addEventListener('click', function () {
+      var n = app.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat').length;
+      if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di semua tahun?')) return;
+      [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.ulang(); });
+    });
+    app.append(semua);
+    app.append(el('section', T.map(tahun), { id: 'integrasi' }));
+  }
 
-  var nav = el('nav', D.map(function (m) {
-    return el('a', [m.nama, el('small', m.halaman.length + ' hal')], { href: '#' + m.key });
-  }), { 'aria-label': 'Materi' });
-  if (window.INTEG) nav.append(el('a', ['Ujian integrasi', el('small', nSoal + ' soal · ' + window.INTEG.length + ' tahun')], { href: '#integrasi' }));
-  app.append(nav);
-  var semua = el('button.sek.semua', 'Reset semua jawaban di halaman ini', { type: 'button' });
-  semua.addEventListener('click', function () {
-    var n = app.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat').length;
-    if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di ujian integrasi?')) return;
-    [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.ulang(); });
-  });
-  app.append(semua);
-  D.forEach(function (m) { app.append(section(m)); });
-  if (window.INTEG) app.append(integrasi(window.INTEG));
   // Content is rendered after load, so the browser's own jump to #hash has nothing to land on: do it once here.
   // In-page links only need their <details> opened; the browser then scrolls and restores position on Back.
   function reveal(id) {

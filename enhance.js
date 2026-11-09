@@ -34,7 +34,7 @@
       var section = document.getElementById(id);
       var match = !query || (section && section.textContent.toLocaleLowerCase('id').indexOf(query) !== -1) || link.textContent.toLocaleLowerCase('id').indexOf(query) !== -1;
       link.hidden = !match;
-      if (section && section.tagName === 'SECTION') {
+      if (section && section.matches('section, details')) {
         section.hidden = !match;
         if (match) visible += 1;
       }
