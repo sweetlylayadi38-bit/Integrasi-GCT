@@ -178,3 +178,5 @@ figure.big img { border-color: var(--acc); }
 
 /* Penjelasan tiap slide */
 figcaption .jelas { margin: 8px 0 0; padding-left: 10px; border-left: 2px solid var(--acc); color: var(--fg); font-size: .9rem; line-height: 1.55; }
+figcaption .catatan { margin: 6px 0 0; padding-left: 10px; border-left: 2px solid #f2b37a; color: var(--fg); font-size: .82rem; line-height: 1.5; }
+figcaption .sumber { margin: 4px 0 0; padding-left: 12px; font-size: .74rem; line-height: 1.45; opacity: .8; }
