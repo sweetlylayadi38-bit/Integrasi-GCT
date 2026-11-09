@@ -175,3 +175,6 @@ figure.big img { border-color: var(--acc); }
   section { content-visibility: visible; }
   a { color: #111; }
 }
+
+/* Penjelasan tiap slide */
+figcaption .jelas { margin: 8px 0 0; padding-left: 10px; border-left: 2px solid var(--acc); color: var(--fg); font-size: .9rem; line-height: 1.55; }

@@ -23,7 +23,7 @@
       el('div.gal', m.halaman.map(function (h) {
         return el('figure', [
           el('img', null, { loading: 'lazy', decoding: 'async', src: 'img/' + m.key + '-' + pad(h.n) + '.webp', alt: m.nama + ' halaman ' + h.n, width: m.w, height: m.h, tabindex: '0', role: 'button', 'aria-expanded': 'false' }),
-          el('figcaption', [el('b', String(h.n)), ' ' + h.ket])
+          el('figcaption', [el('b', String(h.n)), ' ' + h.ket, h.jelas ? el('p.jelas', [el('b', 'Penjelasan: '), h.jelas]) : ''])
         ], { id: m.key + '-' + h.n });
       }))
     ]));
