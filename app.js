@@ -37,7 +37,9 @@
   function section(m) {
     var bugs = m.bug.map(function (b) { return { b: b }; }).sort(sortBugs).map(function (x) { return x.b; });
     var s = bugs.filter(serius), r = bugs.filter(function (b) { return !serius(b); });
-    var sec = el('section', [el('p.eyebrow', m.nama), el('h2', m.judul), el('h3', 'Inti ujian'), list('.inti', m.inti), el('h3', 'Rekap per topik')], { id: m.key });
+    var sec = el('section', [el('p.eyebrow', m.nama), el('h2', m.judul)], { id: m.key });
+    if (m.inti.length) sec.append(el('h3', 'Inti ujian'), list('.inti', m.inti));
+    sec.append(el('h3', 'Rekap per topik'));
 
     sec.append(el('div.topik', m.bagian.map(function (t) {
       var hl = el('p.hl', 'hal. ');
