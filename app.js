@@ -77,13 +77,15 @@
       var ops = el('div.opsi', s.opsi.map(function (o, i) {
         return el('button', [el('b', 'ABCDEFGH'[i] + '. '), o], { type: 'button', 'data-i': i });
       }));
+      function kunciOpsi() { [].forEach.call(ops.children, function (x, j) { x.disabled = true; if (j === s.jawab) x.classList.add('kunci'); }); }
       ops.addEventListener('click', function (e) {
         var b = e.target.closest('button'); if (!b || b.disabled) return;
         var i = +b.getAttribute('data-i');
-        [].forEach.call(ops.children, function (x, j) { x.disabled = true; if (j === s.jawab) x.classList.add('kunci'); });
+        kunciOpsi();
         if (i !== s.jawab) b.classList.add('pilih');
         selesai(i === s.jawab);
       });
+      li.buka = function () { kunciOpsi(); selesai(null); };
       li.append(ops);
     } else {
       var inp = el('input', null, { id: id, type: 'text', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false' });
@@ -98,24 +100,31 @@
         if (!inp.value.trim()) { inp.focus(); return; }
         kunciForm(); selesai(cocok(inp.value, s.terima));
       });
-      lihat.addEventListener('click', function () { kunciForm(); selesai(null); });
+      li.buka = function () { kunciForm(); selesai(null); };
+      lihat.addEventListener('click', li.buka);
       li.append(f);
     }
     return li;
   }
+
+  var BELUM = '.soal > li:not(.ok):not(.no):not(.lihat)';   // questions not answered or revealed yet
 
   // groups: [{judul, items}] -> <details> with running score
   function kuis(id, judul, groups) {
     var total = groups.reduce(function (n, g) { return n + g.items.length; }, 0);
     var skor = el('p.skor', '', { 'aria-live': 'polite' });
     var reset = el('button.sek', 'Reset semua jawaban', { type: 'button', hidden: '' });
+    var buka = el('button.sek', 'Buka semua jawaban', { type: 'button' });
     function hitung(sel) { return d.querySelectorAll(sel).length; }
     function nilai() {                          // recount from the DOM, so no reset path can leave the score out of sync
       var benar = hitung('.soal > .ok'), dijawab = benar + hitung('.soal > .no');
       skor.textContent = dijawab ? 'Skor ' + benar + ' dari ' + dijawab + ' terjawab (' + total + ' soal)' : '';
       reset.hidden = !dijawab && !hitung('.soal > .lihat');
+      buka.hidden = !hitung(BELUM);
     }
-    var d = el('details.latihan', [el('summary', judul + ' (' + total + ')'), skor, reset], { id: id });
+    var d = el('details.latihan', [el('summary', judul + ' (' + total + ')'), skor, buka, reset], { id: id });
+    d.buka = function () { [].forEach.call(d.querySelectorAll(BELUM), function (li) { li.buka(); }); };   // answered questions stay as they are
+    buka.addEventListener('click', function () { d.buka(); d.firstChild.focus(); });
     d.ulang = function () {
       [].forEach.call(d.querySelectorAll('.soal > .ok, .soal > .no, .soal > .lihat'), function (li) { li.ulang(); });
       nilai();
@@ -170,7 +179,11 @@
       if (!n || n > 1 && !confirm('Reset ' + n + ' jawaban di semua tahun?')) return;
       [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.ulang(); });
     });
-    app.append(semua);
+    var bukaSemua = el('button.sek', 'Buka semua jawaban di halaman ini', { type: 'button' });
+    bukaSemua.addEventListener('click', function () {
+      [].forEach.call(app.querySelectorAll('details.latihan'), function (d) { d.buka(); });
+    });
+    app.append(el('div.baris', [bukaSemua, semua]));
     app.append(el('section', T.map(tahun), { id: 'integrasi' }));
   }
 
