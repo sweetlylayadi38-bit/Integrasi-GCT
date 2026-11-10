@@ -61,3 +61,7 @@ button:not(:disabled){cursor:pointer}button:not(:disabled):hover{border-color:va
 .gbr figure{flex:1 1 220px;max-width:360px}.gbr figure img{width:100%}
 .cat{margin-top:6px;font-size:.88rem;color:var(--mid)}
 .soal li>.sek,.latihan>.sek{margin:8px 8px 0 0}.semua{align-self:flex-start}
+
+/* halaman materi inti */
+.inti h2 a{color:var(--fg);text-decoration:none}.inti h2 a:hover{color:var(--acc)}
+.inti ul{margin:12px 0 0;padding-left:1.2em;max-width:80ch;line-height:1.7;text-align:justify}.inti li{margin:4px 0}.inti li b{color:var(--acc)}
