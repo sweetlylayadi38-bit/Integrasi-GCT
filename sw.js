@@ -1,7 +1,7 @@
 // Service worker: situs tetap bisa dibuka tanpa internet.
 // Halaman, CSS, JS: ambil dari jaringan dulu (selalu versi terbaru), cache hanya cadangan saat offline.
 // Gambar slide: ambil dari cache dulu (hemat kuota), diunduh di belakang layar tanpa menahan pembaruan.
-const VERSI = 'gct-v6';
+const VERSI = 'gct-v7';
 const INTI = [
 "./",
 "index.html",
@@ -16,6 +16,12 @@ const INTI = [
 "img/latar-damask.webp"
 ];
 const GAMBAR = [
+"img/integ/2021-h5.webp",
+"img/integ/2021-h6.webp",
+"img/integ/2021-h7.webp",
+"img/integ/2021-h9.webp",
+"img/integ/2023-32.webp",
+"img/integ/2023-37.webp",
 "img/biokimia-02.webp",
 "img/biokimia-03.webp",
 "img/biokimia-04.webp",
