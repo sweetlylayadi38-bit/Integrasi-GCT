@@ -13,3 +13,5 @@ Situs statis tanpa build. Buka `index.html` langsung, atau aktifkan GitHub Pages
 - `data.js` daftar slide dan keterangannya
 - `integ.js` soal ujian integrasi
 - `img/` gambar slide dan gambar soal
+- `sw.js` service worker: menyimpan semua file agar situs bisa dibuka offline (naikkan `VERSI` tiap isi situs diubah; gambar baru ditambahkan ke daftar `FILES`)
+- `offline.js` pendaftar service worker
