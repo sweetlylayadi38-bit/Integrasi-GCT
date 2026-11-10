@@ -1,7 +1,8 @@
-// Service worker: simpan semua file agar situs tetap bisa dibuka tanpa internet.
-// Naikkan VERSI setiap kali isi situs diubah supaya cache lama diganti.
-const VERSI = 'gct-v2';
-const FILES = [
+// Service worker: situs tetap bisa dibuka tanpa internet.
+// Halaman, CSS, JS: ambil dari jaringan dulu (selalu versi terbaru), cache hanya cadangan saat offline.
+// Gambar slide: ambil dari cache dulu (hemat kuota), diunduh di belakang layar tanpa menahan pembaruan.
+const VERSI = 'gct-v3';
+const INTI = [
 "./",
 "index.html",
 "inti.html",
@@ -12,7 +13,9 @@ const FILES = [
 "enhance.js",
 "offline.js",
 "integ.js",
-"img/latar-damask.webp",
+"img/latar-damask.webp"
+];
+const GAMBAR = [
 "img/biokimia-02.webp",
 "img/biokimia-03.webp",
 "img/biokimia-04.webp",
@@ -388,7 +391,8 @@ const FILES = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSI).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  // Hanya file inti (kecil) yang wajib, jadi versi baru langsung aktif.
+  e.waitUntil(caches.open(VERSI).then(c => c.addAll(INTI.map(u => new Request(u, {cache: 'reload'})))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -397,13 +401,37 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-// Ambil dari cache dulu (cepat & jalan offline); saat online, perbarui cache di belakang layar.
+// Halaman meminta semua gambar disimpan; dikerjakan satu per satu, yang gagal dilewati.
+self.addEventListener('message', e => {
+  if (e.data !== 'simpan-gambar') return;
+  e.waitUntil(caches.open(VERSI).then(async c => {
+    for (const u of GAMBAR) {
+      if (await c.match(u)) continue;
+      try { await c.add(u); } catch (_) {}
+    }
+    const semua = await self.clients.matchAll();
+    semua.forEach(k => k.postMessage('gambar-tersimpan'));
+  }));
+});
+
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || !e.request.url.startsWith(self.location.origin)) return;
+  const req = e.request;
+  if (req.method !== 'GET' || !req.url.startsWith(self.location.origin)) return;
+  const gambar = /\/img\//.test(new URL(req.url).pathname);
   e.respondWith(caches.open(VERSI).then(async c => {
-    const lama = await c.match(e.request, { ignoreSearch: true });
-    const baru = fetch(e.request).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; });
-    if (lama) { e.waitUntil(baru.catch(() => {})); return lama; }
-    return baru;
+    if (gambar) {
+      const ada = await c.match(req, {ignoreSearch: true});
+      if (ada) return ada;
+      const r = await fetch(req);
+      if (r.ok) c.put(req, r.clone());
+      return r;
+    }
+    try {
+      const r = await fetch(req, {cache: 'no-cache'});
+      if (r.ok) c.put(req, r.clone());
+      return r;
+    } catch (_) {
+      return (await c.match(req)) || (await c.match(req, {ignoreSearch: true})) || Response.error();
+    }
   }));
 });
