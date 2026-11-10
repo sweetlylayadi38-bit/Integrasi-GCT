@@ -1,6 +1,6 @@
 // Service worker: simpan semua file agar situs tetap bisa dibuka tanpa internet.
 // Naikkan VERSI setiap kali isi situs diubah supaya cache lama diganti.
-const VERSI = 'gct-v1';
+const VERSI = 'gct-v2';
 const FILES = [
 "./",
 "index.html",
@@ -12,6 +12,7 @@ const FILES = [
 "enhance.js",
 "offline.js",
 "integ.js",
+"img/latar-damask.webp",
 "img/biokimia-02.webp",
 "img/biokimia-03.webp",
 "img/biokimia-04.webp",
