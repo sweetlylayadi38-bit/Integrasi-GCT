@@ -1,7 +1,7 @@
 // Service worker: situs tetap bisa dibuka tanpa internet.
 // Halaman, CSS, JS: ambil dari jaringan dulu (selalu versi terbaru), cache hanya cadangan saat offline.
 // Gambar slide: ambil dari cache dulu (hemat kuota), diunduh di belakang layar tanpa menahan pembaruan.
-const VERSI = 'gct-v11';
+const VERSI = 'gct-v12';
 const INTI = [
 "./",
 "index.html",
